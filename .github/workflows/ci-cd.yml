@@ -47,11 +47,10 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       
-      - name: Verify SSH key
+      # Шаг 3: Тестирование подключения к GitHub с использованием SSH
+      - name: Test SSH connection
         run: |
-          ssh-add -L  # Проверка, что ключ добавлен в ssh-agent
-          ssh -T git@github.com  # Тестирование подключения к GitHub через SSH
-
+          ssh -T git@github.com
 
       # Шаг 3: Скопировать Docker Compose файл на сервер
       - name: Copy docker-compose.yml to the server
