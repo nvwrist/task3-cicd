@@ -48,16 +48,18 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       
       # Шаг 3: Тестирование подключения к GitHub с использованием SSH
-      - name: Test SSH connection
-        run: |
-          ssh -T git@github.com
 
-      # Шаг 3: Скопировать Docker Compose файл на сервер
+      # Шаг 4: Клонировать репозиторий на сервер
+      - name: Clone repository to the server
+        run: |
+          ssh -i ~/.ssh/id_rsa root@194.87.215.75 'git clone git@github.com:username/repository.git /home/user/app'
+
+      # Шаг 5: Скопировать Docker Compose файл на сервер
       - name: Copy docker-compose.yml to the server
         run: |
           scp -i ~/.ssh/id_rsa docker-compose.yml root@194.87.215.75:/home/user/app/
 
-      # Шаг 4: Подключиться к серверу и выполнить Docker Compose
+      # Шаг 6: Подключиться к серверу и выполнить Docker Compose
       - name: Deploy app on the server
         run: |
           ssh -i ~/.ssh/id_rsa root@194.87.215.75 << 'EOF'
