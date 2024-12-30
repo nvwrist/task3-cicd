@@ -74,3 +74,4 @@ jobs:
             docker-compose pull  # Обновляем образы
             docker-compose up -d  # Запускаем контейнеры
           EOF
+          
