@@ -43,6 +43,9 @@ jobs:
 
       # Шаг 2: Настроить SSH для подключения к серверу
       - name: Set up SSH
+        run: |
+          echo "$SSH_PRIVATE_KEY" | ssh-add -
+          ssh -T git@github.com
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
