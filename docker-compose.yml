@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"  # Перенаправляем порты
+    environment:
+      FLASK_ENV: production
+    volumes:
+      - .:/app  # Привязываем локальную директорию к директории контейнера
+    restart: always  # Автоматический перезапуск контейнера при сбоях
