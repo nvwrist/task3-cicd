@@ -33,38 +33,38 @@ jobs:
       - name: Run tests
         run: pytest
 
-deploy:
-  runs-on: ubuntu-latest
+  deploy:
+    runs-on: ubuntu-latest
 
-  steps:
-    # Шаг 1: Настроить SSH для доступа к серверу
-    - name: Set up SSH
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      run: |
-        mkdir -p ~/.ssh
-        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        # Добавление публичного ключа для GitHub
-        ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
-        # Добавление публичного ключа для вашего сервера
-        ssh-keyscan -t rsa 194.87.215.75 >> ~/.ssh/known_hosts
+    steps:
+      # Шаг 1: Настроить SSH для доступа к серверу
+      - name: Set up SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          # Добавление публичного ключа для GitHub
+          ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+          # Добавление публичного ключа для вашего сервера
+          ssh-keyscan -t rsa 194.87.215.75 >> ~/.ssh/known_hosts
 
-    # Шаг 2: Подключиться к серверу и выполнить команды Docker
-    - name: Deploy app
-      run: |
-        ssh -i ~/.ssh/id_rsa user@194.87.215.75 << 'EOF'
-          set -e  # Остановить выполнение при ошибке
-          echo "Клонируем или обновляем репозиторий..."
-          if [ -d "/home/user/app" ]; then
-            cd /home/user/app && git reset --hard && git pull
-          else
-            git clone git@github.com:nvwrist/task3-cicd.git /home/user/app
-          fi
+      # Шаг 2: Подключиться к серверу и выполнить команды Docker
+      - name: Deploy app
+        run: |
+          ssh -i ~/.ssh/id_rsa user@194.87.215.75 << 'EOF'
+            set -e  # Остановить выполнение при ошибке
+            echo "Клонируем или обновляем репозиторий..."
+            if [ -d "/home/user/app" ]; then
+              cd /home/user/app && git reset --hard && git pull
+            else
+              git clone git@github.com:nvwrist/task3-cicd.git /home/user/app
+            fi
 
-          echo "Перезапускаем контейнеры..."
-          cd /home/user/app
-          docker-compose down
-          docker-compose build
-          docker-compose up -d
-        EOF
+            echo "Перезапускаем контейнеры..."
+            cd /home/user/app
+            docker-compose down
+            docker-compose build
+            docker-compose up -d
+          EOF
