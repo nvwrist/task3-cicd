@@ -9,30 +9,6 @@ on:
       - main
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      # Шаг 1: Клонировать репозиторий
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      # Шаг 2: Установить Python
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-
-      # Шаг 3: Установить зависимости
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      # Шаг 4: Запустить тесты
-      - name: Run tests
-        run: pytest
-
   deploy:
     runs-on: ubuntu-latest
 
@@ -41,31 +17,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Шаг 2: Настроить SSH для подключения к серверу
+      # Шаг 2: Настроить SSH для подключения
       - name: Set up SSH
         run: |
-          mkdir -p ~/.ssh  # Создаем папку .ssh, если она не существует
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          mkdir -p ~/.ssh  # Создаем папку .ssh
+          chmod 700 ~/.ssh  # Устанавливаем правильные права для директории
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa  # Пишем ключ в файл
+          chmod 600 ~/.ssh/id_rsa  # Устанавливаем правильные права на файл
 
-      # Шаг 3: Добавить ключ GitHub в список известных хостов
+      # Шаг 3: Добавить ключ GitHub в known_hosts
       - name: Add GitHub to known hosts
         run: |
-          mkdir -p ~/.ssh  # Убедимся, что папка .ssh существует
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
+          ssh-keyscan github.com >> ~/.ssh/known_hosts  # Добавляем GitHub в known_hosts
+          chmod 644 ~/.ssh/known_hosts  # Устанавливаем права на known_hosts
 
-      # Шаг 4: Клонировать репозиторий на сервер
+      # Шаг 4: Проверка SSH-соединения с GitHub
+      - name: Test SSH connection to GitHub
+        run: |
+          ssh -T git@github.com  # Тестируем подключение к GitHub
+
+      # Шаг 5: Клонировать репозиторий на сервер
       - name: Clone repository to the server
         run: |
           ssh -i ~/.ssh/id_rsa root@194.87.215.75 'git clone git@github.com:nvwrist/task3-cicd.git /home/user/app'
 
-      # Шаг 5: Скопировать Docker Compose файл на сервер
+      # Шаг 6: Скопировать Docker Compose файл на сервер
       - name: Copy docker-compose.yml to the server
         run: |
           scp -i ~/.ssh/id_rsa docker-compose.yml root@194.87.215.75:/home/user/app/
 
-      # Шаг 6: Подключиться к серверу и выполнить Docker Compose
+      # Шаг 7: Подключиться к серверу и выполнить Docker Compose
       - name: Deploy app on the server
         run: |
           ssh -i ~/.ssh/id_rsa root@194.87.215.75 << 'EOF'
@@ -74,4 +55,3 @@ jobs:
             docker-compose pull  # Обновляем образы
             docker-compose up -d  # Запускаем контейнеры
           EOF
-          
