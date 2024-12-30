@@ -37,45 +37,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Шаг 1: Клонировать репозиторий
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      # Шаг 2: Настроить SSH для подключения к серверу
+      # Шаг 1: Настроить SSH для доступа к серверу
       - name: Set up SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
-          mkdir -p ~/.ssh  # Создаем папку .ssh, если она не существует
+          mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 194.87.215.75 >> ~/.ssh/known_hosts
 
-      # Шаг 3: Добавить ключи GitHub и сервера в список известных хостов
-      - name: Add GitHub and server to known hosts
-        run: |
-          mkdir -p ~/.ssh  # Убедимся, что папка .ssh существует
-          chmod 700 ~/.ssh  # Устанавливаем правильные права для директории
-          # Добавляем ключ GitHub в known_hosts
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          # Добавляем ключ сервера в known_hosts
-          ssh-keyscan 194.87.215.75 >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts  # Устанавливаем правильные права для known_hosts
-
-
-      # Шаг 4: Клонировать репозиторий на сервер
-      - name: Clone repository to the server
-        run: |
-          ssh -i ~/.ssh/id_rsa root@194.87.215.75 'git clone git@github.com:nvwrist/task3-cicd.git /home/user/app'
-
-      # Шаг 5: Скопировать Docker Compose файл на сервер
-      - name: Copy docker-compose.yml to the server
-        run: |
-          scp -i ~/.ssh/id_rsa docker-compose.yml root@194.87.215.75:/home/user/app/
-
-      # Шаг 6: Подключиться к серверу и выполнить Docker Compose
-      - name: Deploy app on the server
+      # Шаг 2: Подключиться к серверу и выполнить команды Docker
+      - name: Deploy app
         run: |
           ssh -i ~/.ssh/id_rsa root@194.87.215.75 << 'EOF'
-            cd /home/user/app
-            docker-compose down  # Останавливаем старые контейнеры
-            docker-compose pull  # Обновляем образы
-            docker-compose up -d  # Запускаем контейнеры
+            set -e  # Остановить выполнение при ошибке
+            echo "Клонируем или обновляем репозиторий..."
+            if [ -d "/home/user/app" ]; then
+              cd /home/user/app && git pull
+            else
+              git clone git@github.com:nvwrist/task3-cicd.git /home/user/app
+              cd /home/user/app
+            fi
+
+            echo "Перезапускаем контейнеры..."
+            docker-compose down
+            docker-compose build
+            docker-compose up -d
           EOF
